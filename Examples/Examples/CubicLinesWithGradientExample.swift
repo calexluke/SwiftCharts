@@ -12,13 +12,25 @@ import SwiftCharts
 class CubicLinesWithGradientExample: UIViewController {
     
     fileprivate var chart: Chart? // arc
+    var timer: Timer?
+    var dataPoints = [(0, 0)]
+    var xCounter = 0
+    var yCounter = 5
+    var dataIsIncreasing = true
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        drawChart()
+        timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
+    }
+    
+    func drawChart() {
+        self.chart?.clearView()
+        
         let labelSettings = ChartLabelSettings(font: ExamplesDefaults.labelFont)
 
-        let chartPoints = [(0, 0), (4, 4), (8, 11), (9, 2), (11, 10), (12, 3), (15, 18), (18, 10), (20, 15)].map{ChartPoint(x: ChartAxisValueInt($0.0, labelSettings: labelSettings), y: ChartAxisValueInt($0.1))}
+        let chartPoints = dataPoints.map{ChartPoint(x: ChartAxisValueInt($0.0, labelSettings: labelSettings), y: ChartAxisValueInt($0.1))}
         
         let xValues = chartPoints.map{$0.x}
         let yValues = ChartAxisValuesStaticGenerator.generateYAxisValuesWithChartPoints(chartPoints, minSegmentCount: 10, maxSegmentCount: 20, multiple: 2, axisValueGenerator: {ChartAxisValueDouble($0, labelSettings: labelSettings)}, addPaddingSegmentIfEdge: false)
@@ -32,7 +44,7 @@ class CubicLinesWithGradientExample: UIViewController {
         let coordsSpace = ChartCoordsSpaceLeftBottomSingleAxis(chartSettings: chartSettings, chartFrame: chartFrame, xModel: xModel, yModel: yModel)
         let (xAxisLayer, yAxisLayer, innerFrame) = (coordsSpace.xAxisLayer, coordsSpace.yAxisLayer, coordsSpace.chartInnerFrame)
         
-        let lineModel = ChartLineModel(chartPoints: chartPoints, lineColors: [UIColor.yellow, UIColor.red], lineWidth: 2, animDuration: 1, animDelay: 0)
+        let lineModel = ChartLineModel(chartPoints: chartPoints, lineColors: [UIColor.yellow, UIColor.red], lineWidth: 2, animDuration: 0, animDelay: 0)
         let chartPointsLineLayer = ChartPointsLineLayer(xAxis: xAxisLayer.axis, yAxis: yAxisLayer.axis, lineModels: [lineModel], pathGenerator: CatmullPathGenerator()) // || CubicLinePathGenerator
         
         let settings = ChartGuideLinesDottedLayerSettings(linesColor: UIColor.black, linesWidth: ExamplesDefaults.guidelinesWidth)
@@ -53,4 +65,29 @@ class CubicLinesWithGradientExample: UIViewController {
         view.addSubview(chart.view)
         self.chart = chart
     }
+    
+    @objc func timerFired() {
+        xCounter += 1
+        let offset = Int.random(in: -2...2)
+        let yValue = yCounter + offset
+        
+        self.dataPoints.append((xCounter, yValue))
+        
+        if xCounter > 500 {
+            self.dataPoints.removeFirst()
+        }
+        
+        if xCounter % 10 == 0 {
+            dataIsIncreasing.toggle()
+        }
+        
+        if dataIsIncreasing {
+            yCounter += 1
+        } else {
+            yCounter -= 1
+        }
+        
+        drawChart()
+    }
 }
+
